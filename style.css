@@ -436,7 +436,7 @@ section {
   max-width: 1200px; /* Limit the width of the content */
   margin: 0 auto; /* Center the content horizontally */
   padding: 0 20px;
-  color: darkslateblue; /* Add some padding to the sides */
+  color: darkgreen; /* Add some padding to the sides */
 }
 
 .article-container {
