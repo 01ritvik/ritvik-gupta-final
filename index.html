@@ -1412,6 +1412,25 @@
             visibility: visible;
         }
 
+        .mobile-nav-close {
+            position: absolute;
+            top: 30px;
+            right: 30px;
+            background: none;
+            border: none;
+            color: var(--text-primary);
+            font-size: 2rem;
+            cursor: pointer;
+            padding: 10px;
+            z-index: 999;
+        }
+
+        .mobile-nav-close:focus {
+            outline: 2px solid var(--primary-purple);
+            outline-offset: 4px;
+            border-radius: 4px;
+        }
+
         .mobile-nav a {
             color: var(--text-primary);
             text-decoration: none;
@@ -1620,6 +1639,9 @@
 
     <!-- Mobile Navigation -->
     <div class="mobile-nav" id="mobile-nav">
+        <button class="mobile-nav-close" id="mobile-nav-close" aria-label="Close menu">
+            <i class="fas fa-times"></i>
+        </button>
         <a href="#hero">Home</a>
         <a href="#experience">Experience</a>
         <a href="#projects">Projects</a>
@@ -2215,10 +2237,16 @@
         // Mobile Navigation
         const hamburgerMenu = document.getElementById('hamburger-menu');
         const mobileNav = document.getElementById('mobile-nav');
+        const mobileNavClose = document.getElementById('mobile-nav-close');
 
         hamburgerMenu.addEventListener('click', () => {
             mobileNav.classList.toggle('active');
             document.body.style.overflow = mobileNav.classList.contains('active') ? 'hidden' : 'auto';
+        });
+
+        mobileNavClose.addEventListener('click', () => {
+            mobileNav.classList.remove('active');
+            document.body.style.overflow = 'auto';
         });
 
         // Back to Top Button
