@@ -2429,7 +2429,6 @@
 
         // Touch support
         window.addEventListener('touchmove', (e) => {
-            e.preventDefault();
             if (!interactionParticle) {
                 interactionParticle = new Particle();
                 interactionParticle.vx = 0;
@@ -2441,10 +2440,9 @@
                 interactionParticle.x = x;
                 interactionParticle.y = y;
             }
-        }, { passive: false });
+        }, { passive: true });
 
         window.addEventListener('touchstart', (e) => {
-            e.preventDefault();
             setTimeout(() => {
                 if (e.changedTouches[0]) {
                     const { x, y } = getCanvasPos(e.changedTouches[0].clientX, e.changedTouches[0].clientY);
@@ -2456,7 +2454,7 @@
                     }
                 }
             }, 200);
-        }, { passive: false });
+        }, { passive: true });
 
         window.addEventListener('touchend', () => {
             if (interactionParticle) {
@@ -2466,7 +2464,7 @@
                 }
                 interactionParticle = null;
             }
-        }, { passive: false });
+        }, { passive: true });
 
         // Initialize
         resizeCanvas();
