@@ -56,6 +56,24 @@
             scroll-behavior: smooth;
         }
 
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 10px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: var(--bg-primary);
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: linear-gradient(135deg, var(--primary-purple), var(--primary-violet));
+            border-radius: 5px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: linear-gradient(135deg, var(--primary-violet), var(--primary-purple));
+        }
+
         body {
             font-family: 'Inter', sans-serif;
             background: var(--bg-primary);
@@ -323,6 +341,16 @@
             position: relative;
         }
 
+        .nav-links a:focus {
+            outline: 2px solid var(--primary-purple);
+            outline-offset: 4px;
+            border-radius: 4px;
+        }
+
+        .nav-links a:hover {
+            color: var(--text-primary);
+        }
+
         .nav-links a::after {
             content: '';
             position: absolute;
@@ -397,12 +425,14 @@
         }
 
         #particle-canvas {
-            position: absolute;
+            position: fixed;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
-            z-index: 0;
+            overflow: hidden;
+            z-index: -1;
+            pointer-events: none;
         }
 
         .hero-content {
@@ -500,6 +530,11 @@
             display: inline-block;
             position: relative;
             overflow: hidden;
+        }
+
+        .btn:focus {
+            outline: 2px solid var(--primary-purple);
+            outline-offset: 3px;
         }
 
         .btn::before {
@@ -1266,6 +1301,12 @@
             transition: all 0.3s ease;
         }
 
+        .contact-socials a:focus {
+            outline: 2px solid var(--primary-purple);
+            outline-offset: 4px;
+            border-radius: 50%;
+        }
+
         .contact-socials a:hover {
             color: var(--primary-purple);
             transform: translateY(-5px) scale(1.2);
@@ -1273,10 +1314,6 @@
 
         .contact-socials a i {
             transition: all 0.3s ease;
-        }
-
-        .contact-socials a:hover i {
-            transform: rotate(360deg);
         }
 
         .social-links {
@@ -1292,6 +1329,12 @@
             transition: all 0.3s ease;
         }
 
+        .social-links a:focus {
+            outline: 2px solid var(--primary-purple);
+            outline-offset: 4px;
+            border-radius: 50%;
+        }
+
         .social-links a:hover {
             color: var(--primary-purple);
             transform: translateY(-5px) scale(1.2);
@@ -1299,10 +1342,6 @@
 
         .social-links a i {
             transition: all 0.3s ease;
-        }
-
-        .social-links a:hover i {
-            transform: rotate(360deg);
         }
 
         /* Footer */
@@ -1589,9 +1628,11 @@
         <a href="#contact">Contact</a>
     </div>
 
+    <!-- Particle Background Canvas -->
+    <canvas id="particle-canvas"></canvas>
+
     <!-- Hero Section -->
     <section id="hero">
-        <canvas id="particle-canvas"></canvas>
         <div class="hero-content">
             <h1 class="hero-title">Ritvik Gupta</h1>
             <p class="hero-subtitle"><span id="typing-text"></span><span class="cursor">|</span></p>
@@ -2237,9 +2278,12 @@
         const canvas = document.getElementById('particle-canvas');
         const ctx = canvas.getContext('2d');
         let particles = [];
+        let interactionParticle = null;
         const particleCount = 80;
         const connectionDistance = 150;
         const mouseDistance = 200;
+        let mouseIsDown = false;
+        let spawnInterval = null;
 
         function resizeCanvas() {
             canvas.width = window.innerWidth;
@@ -2280,9 +2324,15 @@
 
         function initParticles() {
             particles = [];
-            for (let i = 0; i < particleCount; i++) {
-                particles.push(new Particle());
-            }
+            let counter = 0;
+            const interval = setInterval(() => {
+                if (counter < particleCount) {
+                    particles.push(new Particle());
+                    counter++;
+                } else {
+                    clearInterval(interval);
+                }
+            }, 250);
         }
 
         function drawConnections() {
@@ -2293,10 +2343,10 @@
                     const distance = Math.sqrt(dx * dx + dy * dy);
 
                     if (distance < connectionDistance) {
-                        const opacity = 1 - distance / connectionDistance;
+                        const opacity = (1 - distance / connectionDistance) * particles[i].opacity * particles[j].opacity;
                         ctx.beginPath();
                         ctx.strokeStyle = `rgba(168, 85, 247, ${opacity * 0.3})`;
-                        ctx.lineWidth = 1;
+                        ctx.lineWidth = 0.7;
                         ctx.moveTo(particles[i].x, particles[i].y);
                         ctx.lineTo(particles[j].x, particles[j].y);
                         ctx.stroke();
@@ -2317,28 +2367,106 @@
             requestAnimationFrame(animate);
         }
 
-        // Add particle on click
-        canvas.addEventListener('click', (e) => {
+        function getCanvasPos(clientX, clientY) {
             const rect = canvas.getBoundingClientRect();
-            const x = e.clientX - rect.left;
-            const y = e.clientY - rect.top;
-            particles.push(new Particle(x, y, true));
-            
-            // Limit total particles
-            if (particles.length > 150) {
-                particles.shift();
+            return {
+                x: clientX - rect.left,
+                y: clientY - rect.top
+            };
+        }
+
+        // Mouse move - create interaction particle
+        window.addEventListener('mousemove', (e) => {
+            if (!interactionParticle) {
+                interactionParticle = new Particle();
+                interactionParticle.vx = 0;
+                interactionParticle.vy = 0;
+                particles.push(interactionParticle);
+            }
+            const { x, y } = getCanvasPos(e.clientX, e.clientY);
+            interactionParticle.x = x;
+            interactionParticle.y = y;
+        });
+
+        // Mouse down - spawn particles continuously
+        window.addEventListener('mousedown', () => {
+            mouseIsDown = true;
+            let counter = 0;
+            let quantity = 3;
+
+            spawnInterval = setInterval(() => {
+                if (mouseIsDown && interactionParticle) {
+                    if (counter === 1) quantity = 1;
+                    for (let i = 0; i < quantity; i++) {
+                        particles.push(new Particle(interactionParticle.x, interactionParticle.y, true));
+                    }
+                    // Limit total particles
+                    if (particles.length > 150) {
+                        particles.shift();
+                    }
+                } else {
+                    clearInterval(spawnInterval);
+                }
+                counter++;
+            }, 50);
+        });
+
+        // Mouse up - stop spawning
+        window.addEventListener('mouseup', () => {
+            mouseIsDown = false;
+        });
+
+        // Mouse out - remove interaction particle
+        window.addEventListener('mouseout', () => {
+            if (interactionParticle) {
+                const index = particles.indexOf(interactionParticle);
+                if (index > -1) {
+                    particles.splice(index, 1);
+                }
+                interactionParticle = null;
             }
         });
 
-        // Mouse interaction
-        let mouseX = 0;
-        let mouseY = 0;
+        // Touch support
+        window.addEventListener('touchmove', (e) => {
+            e.preventDefault();
+            if (!interactionParticle) {
+                interactionParticle = new Particle();
+                interactionParticle.vx = 0;
+                interactionParticle.vy = 0;
+                particles.push(interactionParticle);
+            }
+            if (e.changedTouches[0]) {
+                const { x, y } = getCanvasPos(e.changedTouches[0].clientX, e.changedTouches[0].clientY);
+                interactionParticle.x = x;
+                interactionParticle.y = y;
+            }
+        }, { passive: false });
 
-        canvas.addEventListener('mousemove', (e) => {
-            const rect = canvas.getBoundingClientRect();
-            mouseX = e.clientX - rect.left;
-            mouseY = e.clientY - rect.top;
-        });
+        window.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            setTimeout(() => {
+                if (e.changedTouches[0]) {
+                    const { x, y } = getCanvasPos(e.changedTouches[0].clientX, e.changedTouches[0].clientY);
+                    for (let i = 0; i < 3; i++) {
+                        particles.push(new Particle(x, y, true));
+                    }
+                    if (particles.length > 150) {
+                        particles.shift();
+                    }
+                }
+            }, 200);
+        }, { passive: false });
+
+        window.addEventListener('touchend', () => {
+            if (interactionParticle) {
+                const index = particles.indexOf(interactionParticle);
+                if (index > -1) {
+                    particles.splice(index, 1);
+                }
+                interactionParticle = null;
+            }
+        }, { passive: false });
 
         // Initialize
         resizeCanvas();
